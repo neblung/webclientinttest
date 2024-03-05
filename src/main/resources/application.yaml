@@ -1,5 +1,5 @@
 api:
   github:
-    key:${GITHUB_API_TOKEN:123}
-    url:${GITHUB_API_BASE_URL:http://localhost:8090}
-    version:${GITHUB_API_VERSION:2022-11-28}
+    key: ${GITHUB_API_TOKEN:<YOUR-TOKEN>}
+    url: ${GITHUB_API_BASE_URL:https://api.github.com}
+    version: ${GITHUB_API_VERSION:2022-11-28}
