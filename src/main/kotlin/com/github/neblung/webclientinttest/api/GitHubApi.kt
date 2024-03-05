@@ -35,7 +35,7 @@ private suspend inline fun <reified T> mapToPageableResponse(clientResponse: Cli
 
         HttpStatus.NOT_FOUND -> null
         else -> throw UpstreamApiException(
-            msg = "GitHub API request failed.",
+            msg = "GitHub API request failed ($statusCode).",
             statusCode = statusCode,
         )
     }
@@ -44,6 +44,4 @@ private suspend inline fun <reified T> mapToPageableResponse(clientResponse: Cli
 private fun checkIfMorePagesToFetch(clientResponse: ClientResponse) =
     clientResponse.headers()
         .header("link")
-        .firstOrNull()
-        ?.contains("next")
-        ?: false
+        .any { it.contains("next") }
