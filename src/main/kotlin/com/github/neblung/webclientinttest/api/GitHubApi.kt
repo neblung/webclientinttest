@@ -44,4 +44,4 @@ private suspend inline fun <reified T> mapToPageableResponse(clientResponse: Cli
 private fun checkIfMorePagesToFetch(clientResponse: ClientResponse) =
     clientResponse.headers()
         .header("link")
-        .any { it.contains("next") }
+        .any { it.contains("""rel="next"""") }
