@@ -1,34 +1,48 @@
 package com.github.neblung.webclientinttest.api
 
 import com.github.neblung.webclientinttest.UpstreamApiException
+import com.github.neblung.webclientinttest.javalin.JavalinExtension
+import com.github.neblung.webclientinttest.javalin.javalin
+import com.github.neblung.webclientinttest.javalin.javalinPort
 import com.github.neblung.webclientinttest.model.GitHubOwnerResponse
 import com.github.neblung.webclientinttest.model.GitHubRepoResponse
 import com.github.neblung.webclientinttest.model.PageableGitHubResponse
-import io.javalin.Javalin
 import io.javalin.http.Context
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.TestPropertySource
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
 private const val TEST_KEY = "TEST_KEY"
-private const val TEST_PORT = 8082
 private const val TEST_VERSION = "2022-11-28"
+
+
+private class PropertySetter : BeforeAllCallback {
+    override fun beforeAll(context: ExtensionContext) {
+        System.setProperty("api.github.url", "http://localhost:${context.javalinPort}")
+    }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @TestPropertySource(
     properties = [
-        "api.github.url=http://localhost:${TEST_PORT}",
         "api.github.key=$TEST_KEY",
         "api.github.version=$TEST_VERSION",
     ],
@@ -36,28 +50,22 @@ private const val TEST_VERSION = "2022-11-28"
 @SpringBootTest(
     webEnvironment = RANDOM_PORT,
 )
+@ExtendWith(JavalinExtension::class, PropertySetter::class)
+@DirtiesContext
 class GitHubApiTests {
     @Autowired
     private lateinit var gitHubApi: GitHubApi
-    private lateinit var javalin: Javalin
     private var handler: (Context) -> Unit = { }
 
     @BeforeEach
     fun `set up`() {
-        javalin = Javalin.create()
         javalin.get("/users/{username}/repos") { ctx ->
             ctx.status(404)
             handler(ctx)
         }
-        javalin.start(TEST_PORT)
     }
 
     private fun randomInt() = (1..100).random()
-
-    @AfterEach
-    fun `tear down`() {
-        javalin.stop()
-    }
 
     private suspend fun listRepositories(
         username: String = randomInt().toString(),
